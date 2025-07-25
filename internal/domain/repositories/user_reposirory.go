@@ -8,6 +8,7 @@ import (
 
 type UserRepositoryInterface interface {
 	CreateUserRep(c context.Context, user *models.User) error
+	GetUser(c context.Context, userID int) (*models.User, error)
 }
 
 type UserRepository struct {
@@ -28,4 +29,19 @@ func (r *UserRepository) CreateUserRep(c context.Context, user *models.User) err
 		user.Username,
 		user.CreatedAt,
 		user.PityCounter).Scan(&user.ID)
+}
+
+func (r *UserRepository) GetUser(c context.Context, userID int) (*models.User, error) {
+
+	user := &models.User{ID: userID}
+
+	query := `SELECT username, created_at, pity_counter FROM users WHERE id = $1`
+
+	err := r.db.QueryRowContext(c, query, userID).Scan(&user.Username, &user.CreatedAt, &user.PityCounter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
