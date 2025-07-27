@@ -51,16 +51,14 @@ func (r *DropRepository) GetUserDropHistory(c context.Context, userID int, limit
 
 func (r *DropRepository) GetLastUserDropTime(c context.Context, userID int) (time.Time, error) {
 	query := `SELECT dropped_at FROM drop_events WHERE user_id = $1 ORDER BY dropped_at DESC LIMIT 1`
-
 	var lastDrop time.Time
-
 	err := r.db.QueryRowContext(c, query, userID).Scan(&lastDrop)
 
-	if err == sql.ErrNoRows {
-		return time.Time{}, nil
-	}
 	if err != nil {
-		return time.Time{}, nil
+		if err == sql.ErrNoRows {
+			return time.Time{}, nil
+		}
+		return time.Time{}, err
 	}
 	return lastDrop, nil
 }
