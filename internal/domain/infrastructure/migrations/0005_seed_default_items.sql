@@ -1,14 +1,22 @@
--- Сначала обновляем min_pity для существующих записей (если они есть)
-UPDATE items SET min_pity = 0 WHERE id = 1;  -- Обычный предмет - всегда доступен
-UPDATE items SET min_pity = 20 WHERE id = 3; -- Редкий
-UPDATE items SET min_pity = 50 WHERE id = 4; -- Эпический
-UPDATE items SET min_pity = 100 WHERE id = 5; -- Легендарный
+-- Убедимся, что таблица существует
+CREATE TABLE IF NOT EXISTS items (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    rarity VARCHAR(20) NOT NULL,
+    base_chance FLOAT NOT NULL,
+    min_pity INTEGER NOT NULL
+);
 
--- Затем добавляем новые записи (если их нет)
-INSERT INTO items (name, rarity, base_chance, min_pity) VALUES
-('Малый зелье здоровья', 'common', 0.3, 0),
-('Средний меч', 'uncommon', 0.25, 0),
-('Редкий посох маны', 'rare', 0.2, 20),
-('Эпические сапоги скорости', 'epic', 0.15, 50),
-('Легендарный меч дракона', 'legendary', 0.1, 100)
-ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO items (id, name, rarity, base_chance, min_pity) VALUES
+(1, 'Малый зелье здоровья', 'common', 0.5, 0),
+(2, 'Средний меч', 'uncommon', 0.35, 0),
+(3, 'Редкий посох маны', 'rare', 0.25, 15),
+(4, 'Эпические сапоги скорости', 'epic', 0.15, 30),
+(5, 'Легендарный меч дракона', 'legendary', 0.05, 50)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    rarity = EXCLUDED.rarity,
+    base_chance = EXCLUDED.base_chance,
+    min_pity = EXCLUDED.min_pity;
+
