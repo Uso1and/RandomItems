@@ -11,16 +11,20 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var DB *sql.DB
+var (
+	DB            *sql.DB
+	connStr       = "user=postgres password=root dbname=ridb sslmode=disable"
+	migrationsDir = ""
+)
+
+// Для тестов
+func SetMigrationsDir(dir string) {
+	migrationsDir = dir
+}
 
 func Init() error {
-
-	connStr := `user=postgres password=root dbname=ridb sslmode=disable`
-
 	var err error
-
 	DB, err = sql.Open("postgres", connStr)
-
 	if err != nil {
 		return err
 	}
@@ -37,13 +41,13 @@ func Init() error {
 }
 
 func applyMigrations() error {
+	dir := migrationsDir
+	if dir == "" {
+		_, filename, _, _ := runtime.Caller(0)
+		dir = filepath.Join(filepath.Dir(filename), "..", "migrations")
+	}
 
-	_, filename, _, _ := runtime.Caller(0)
-	basePath := filepath.Dir(filename)
-
-	migrationsPath := filepath.Join(basePath, "..", "migrations")
-
-	files, err := ioutil.ReadDir(migrationsPath)
+	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return err
 	}
@@ -56,14 +60,16 @@ func applyMigrations() error {
 		if filepath.Ext(file.Name()) != ".sql" {
 			continue
 		}
-		content, err := ioutil.ReadFile(filepath.Join(migrationsPath, file.Name()))
+
+		content, err := ioutil.ReadFile(filepath.Join(dir, file.Name()))
 		if err != nil {
 			return err
 		}
+
 		if _, err := DB.Exec(string(content)); err != nil {
 			return fmt.Errorf("migration %s failed: %v", file.Name(), err)
 		}
-		fmt.Printf("Applied migration %s\n", file.Name())
 	}
+
 	return nil
 }
